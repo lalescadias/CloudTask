@@ -1,35 +1,37 @@
+
 package com.cloudtasks.api.service;
 
 import com.cloudtasks.api.model.Task;
+import com.cloudtasks.api.repository.TaskRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 @Service
 public class TaskService {
 
-    private final List<Task> tasks = new ArrayList<>();
+    private final TaskRepository taskRepository;
+
+    public TaskService(TaskRepository taskRepository) {
+        this.taskRepository = taskRepository;
+    }
 
     public List<Task> getAllTasks() {
-        return tasks;
+        return taskRepository.findAll();
     }
 
     public Task createTask(Task task) {
         task.setId(UUID.randomUUID().toString());
         task.setCompleted(false);
 
-        tasks.add(task);
-        return task;
+        return taskRepository.save(task);
     }
 
     public Task getTaskById(String id) {
-        return tasks.stream()
-                .filter(task -> task.getId().equals(id))
-                .findFirst()
+        return taskRepository.findById(id)
                 .orElseThrow(() ->
                         new ResponseStatusException(
                                 HttpStatus.NOT_FOUND,
@@ -37,10 +39,6 @@ public class TaskService {
                         ));
     }
 
-    public void deleteTask(String id) {
-        Task task = getTaskById(id);
-        tasks.remove(task);
-    }
     public Task updateTask(String id, Task updatedTask) {
         Task task = getTaskById(id);
 
@@ -48,6 +46,11 @@ public class TaskService {
         task.setDescription(updatedTask.getDescription());
         task.setCompleted(updatedTask.isCompleted());
 
-        return task;
+        return taskRepository.save(task);
+    }
+
+    public void deleteTask(String id) {
+        getTaskById(id);
+        taskRepository.deleteById(id);
     }
 }
